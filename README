@@ -1,0 +1,47 @@
+Performance Timing of  a Black/Gold Lock
+
+A key component of systems design is the balance between performance and functionality.  Part of the reason that system-supported locking is relatively basic (ie basic mutex, semaphore, rwlock) is that the space of possible functionality requirements is extremely large.  So systems designers tend towards simple functionality for which they can guarantee performance, unless there is a particularly well-defined need.
+
+For this assignment, you are going to be implementing and measuring the performance of a particular new type of lock that is a variant of a lock that we discussed in class.  Threads come in one of two types, which we will call black and gold.  You will have a limit on the total number of threads that can be running simultaneously, and any black threads will have priority over any gold threads.  However, unlike what was discussed in class, you must implement the lock such that there is a time threshold T beyond which the Gold threads will automatically get elevated priority.
+
+In symolic form, the priorities are  (old GOLD) > BLACK > (new GOLD).
+
+Implementation
+You must implement two different libraries, both of which conform to the following API:
+
+/* initialize a buzzlock lock with a maximum threshold of num_threads concurrent threads  with a gold priority elevation timeout period of timeout usecs.*/
+
+init_bzz( bzz_t lock, int num_threads, useconds_t timeout);
+
+/* the current thread has color black/gold with respect to lock lock */
+
+bzz_color([BZZ_BLACK|BZZ_GOLD], bzz_t lock); 
+
+/* Acquire the lock */
+
+bzz_lock( bzz_t lock);
+
+/* Release the lock */
+
+bzz_release (bzz_t lock);
+
+/* Destroy the lock */
+
+bzz_kill(bzz_t lock);
+
+ 
+
+Both libraries use this interface.  For the first library, write a user-space shared library (ie generate buzzlock.so) that implements the functionality using standard mutexes, semaphores, timers, and whatever other user space APIs you choose.  For the second libary, you must create a new set of system calls that will carry out the buzz lock functionality within the kernel.  You will still need to create a buzzlock.so, but the functions will need to simply be wrappers around the system call(s).  Note that you will need to make a design choice as to how many system calls you will introduce and what parameters you will choose to pass through.
+
+Measurement
+Build a user-space code that will generate a number of threads.  As the threads are generated, assign them to be either gold or black and attempt to acquire the lock.  Design at least two scenarios for the ratio of thread types and the rate of lock arrival.  Part of the design spec is that threads of either type will only hold the lock for a short amount of time, so you do not have to include anything more substantial than usleep(5), for example. 
+
+At least one of the scenarios needs to involve a high rate of arrival of black threads that cause the gold threads to hit the timeout.  Additional scenarios may be provided for you by the grader before project turn-in.
+
+For both the user-space and kernel-space implementations of the locks, gather high-resolution timing data on how long a thread of a given color has to wait.  Design your experiment carefully so that you can distinguish between the actual lock time and any time latency associated with creating or destroying threads.  Generate histograms of wait time for the two types of threads under the different scenarios.
+
+Write up.
+Discuss the design decisions for both your user space and kernel implementations.  Discuss your choice of lower-level locking technologies used to implement the buzz lock at each level and any changes in between the two.  Present your measurement results (at least 4 total), and explain the features and differences between histograms based on your implementation choices and the scenarios.
+
+To Be Turned In
+One of the team partners should turn in the total project.  Two documents should be attached.  The first is the write up, in either .doc or .pdf format.  The second is a tarball of all source code for your two shared libraries, kernel module, and testing code, using a name of the format "teamX_proj2.tar.gz".
