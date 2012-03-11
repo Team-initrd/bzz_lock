@@ -8,7 +8,6 @@ clean:
 usrbuzzlock.o : usrbuzzlock.c
 	gcc -Wall -fPIC -c usrbuzzlock.c
 	gcc -shared -W1,-soname,libbuzzlock.so -o libbuzzlock.so usrbuzzlock.o
-	export LD_LIBRARY_PATH=$(shell pwd):$$LD_LIBRARY_PATH
 
 tester : tester.c
 	gcc -Wall -L$(shell pwd) tester.c -lbuzzlock -o tester
