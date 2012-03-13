@@ -236,7 +236,7 @@ void bzz_release(bzz_t *lock)
 	// find next thread to unlock and signal its condition
 	printk("bzz_release: %p tid: %p\n", lock, current);
 	mutex_lock(&lock->mutexxx);
-	if (lock->current_locked->task != current {
+	if (lock->current_locked->task != current) {
 		printk("ERROR: You don't have the lock.\n");
 		return;
 	}
