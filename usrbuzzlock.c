@@ -8,7 +8,7 @@ pid_t gettid()
 void add_thread(bzz_t *lock, bzz_thread *thread, int queue)
 {
 	thread->next = NULL;
-	if (!queue) {
+	if (queue == 0) {
 		thread->next = lock->unqueued_threads;
 		lock->unqueued_threads = thread;
 		return;
@@ -48,8 +48,17 @@ void remove_thread(bzz_t *lock, bzz_thread *thread)
 bzz_thread* get_unqueued_thread(bzz_t *lock, pid_t tid)
 {
 	bzz_thread* curr = lock->unqueued_threads;
+	bzz_thread* last = NULL;
 
-	while(curr && curr->tid != tid);
+	while(curr && curr->tid != tid) {
+		last = curr;
+		curr = curr->next;
+	}
+
+	if (last && curr)
+		last->next = curr->next;
+	if (curr && curr == lock->unqueued_threads)
+		lock->unqueued_threads = curr->next;
 
 	return curr;
 }
@@ -84,7 +93,7 @@ int start_next_thread(bzz_t *lock)
 	struct timeval timediff;
 	struct timeval current_time;
 
-	lock->current_locked = NULL;
+	//lock->current_locked = NULL;
 	gettimeofday(&current_time, NULL);
 	if (lock->gold_threads) {
 		timeval_subtract(&timediff, &current_time, &lock->gold_threads->time_created);
@@ -106,6 +115,7 @@ int start_next_thread(bzz_t *lock)
 	}
 
 	if (next_thread == NULL) {
+		lock->current_locked = NULL;
 		return 0;
 	}
 
@@ -161,14 +171,18 @@ void bzz_color(int color, bzz_t *lock)
 
 void bzz_lock(bzz_t *lock)
 {
-	// TODO: wait on bzz_thread's condition variable
-	// TODO: needs to happen differently if nothing has the lock
+	// wait on bzz_thread's condition variable
+	// needs to happen differently if nothing has the lock
+	pthread_mutex_lock(&lock->mutex);
 	bzz_thread* to_lock = get_unqueued_thread(lock, gettid());
-	if (to_lock == NULL)
+	if (to_lock == NULL) {
+		printf("ERROR: Thread color not initialized. TID:%d\n", gettid());
+		pthread_mutex_unlock(&lock->mutex);
 		return;
+	}
 
 	// Not currently locked
-	pthread_mutex_lock(&lock->mutex);
+	//pthread_mutex_lock(&lock->mutex);
 	if (lock->current_locked == NULL) {
 		lock->current_locked = to_lock;
 	} else {
@@ -179,19 +193,20 @@ void bzz_lock(bzz_t *lock)
 	
 	pthread_mutex_unlock(&lock->mutex);
 
-	printf("bzz_lock: %d\n", to_lock->tid);
+	printf("bzz_lock: %d, color: %d\n", to_lock->tid, to_lock->color);
 }
 
 void bzz_release(bzz_t *lock)
 {
-	// TODO: find next thread to unlock and signal its condition
-	printf("bzz_release: %p\n", lock);
+	// find next thread to unlock and signal its condition
+	printf("bzz_release: %p tid: %d\n", lock, gettid());
+	pthread_mutex_lock(&lock->mutex);
 	if (lock->current_locked->tid != gettid()) {
-		printf("You don't have the lock.\n");
+		printf("ERROR: You don't have the lock.\n");
 		return;
 	}
 
-	pthread_mutex_lock(&lock->mutex);
+	//pthread_mutex_lock(&lock->mutex);
 	start_next_thread(lock);
 	pthread_mutex_unlock(&lock->mutex);
 }

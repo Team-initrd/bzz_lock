@@ -10,7 +10,7 @@
 #define BLACK THREADCOUNT-GOLD
 #define THREADPOOL 5   
 
-#define TIMEOUT 10  // in us
+#define TIMEOUT 10000  // in us
 #define ACTIVITY 5 // in us
 bzz_t GTLOCK;
 
