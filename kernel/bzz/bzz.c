@@ -4,8 +4,6 @@
 #include <linux/sched.h>
 #include <linux/init.h>
 #include <linux/time.h>
-#include <sys/time.h>
-#include <sys/types.h>
 #include <uaccess.h>
 
 #define SYSBZZ_INIT 0
@@ -13,6 +11,8 @@
 #define SYSBZZ_LOCK 2
 #define SYSBZZ_RELEASE 3
 #define SYSBZZ_KILL 4
+#define BZZ_GOLD 1
+#define BZZ_BLACK 0
 
 typedef struct _bzz_thread {
         int color;
@@ -28,7 +28,7 @@ typedef struct {
         bzz_thread* black_end;
         bzz_thread* unqueued_threads;
         bzz_thread* current_locked;
-        useconds_t timeout;
+        long timeout;
         struct mutex mutexxx;
 } bzz_t;
 
@@ -78,12 +78,12 @@ void queue_thread(bzz_t *lock, bzz_thread *thread)
 	add_thread(lock, thread, 1);
 }
 
-bzz_thread* get_unqueued_thread(bzz_t *lock, pid_t tid)
+bzz_thread* get_unqueued_thread(bzz_t *lock, struct task_struct* task)
 {
 	bzz_thread* curr = lock->unqueued_threads;
 	bzz_thread* last = NULL;
 
-	while(curr && curr->tid != tid) {
+	while(curr && curr->task != task) {
 		last = curr;
 		curr = curr->next;
 	}
