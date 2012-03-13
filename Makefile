@@ -24,5 +24,11 @@ runtester : tester
 test : test.c usrbuzzlock
 	gcc -Wall -L$(shell pwd) test.c -g -fopenmp -lbuzzlock -o test
 
+test2 : test.c kernbuzzlock
+	gcc -Wall -L$(shell pwd) test.c -g -fopenmp -lbuzzlock -o test
+
 runtest : test
+	LD_LIBRARY_PATH=$(shell pwd):$$LD_LIBRARY_PATH ./test
+
+runtest2 : test2
 	LD_LIBRARY_PATH=$(shell pwd):$$LD_LIBRARY_PATH ./test
