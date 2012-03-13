@@ -35,7 +35,7 @@ typedef struct {
 typedef struct {
 	bzz_t* lock;
 	int num_threads;
-	long timeout;
+	int timeout;
 } bzz_init_args;
 
 typedef struct {
@@ -175,6 +175,7 @@ bzz_thread* alloc_bzz_thread(int color, struct task_struct *task)
 
 void init_bzz(bzz_t **lock_ptr, int num_threads, long timeout)
 {
+	DEFINE_MUTEX(new_mutex);
 	bzz_t* lock = vmalloc(sizeof(bzz_t));
 	*lock_ptr = lock;
         lock->gold_threads = NULL;
@@ -183,7 +184,6 @@ void init_bzz(bzz_t **lock_ptr, int num_threads, long timeout)
         lock->black_end = NULL;
         lock->current_locked = NULL;
         lock->timeout = timeout;
-	DEFINE_MUTEX(new_mutex);
         //lock->mutexxx = __MUTEX_INITIALIZER(&lock->mutexxx);
 	lock->mutexxx = &new_mutex;
 
@@ -208,10 +208,11 @@ void bzz_lock(bzz_t *lock)
 {
 	// wait on bzz_thread's condition variable
 	// needs to happen differently if nothing has the lock
+	bzz_thread* to_lock;
 	mutex_lock(lock->mutexxx);
-	bzz_thread* to_lock = get_unqueued_thread(lock, current);
+	to_lock = get_unqueued_thread(lock, current);
 	if (to_lock == NULL) {
-		printk("ERROR: Thread color not initialized. TID:%d\n", current);
+		printk("ERROR: Thread color not initialized. TID:%p\n", current);
 		mutex_unlock(lock->mutexxx);
 		return;
 	}
