@@ -183,7 +183,9 @@ void init_bzz(bzz_t **lock_ptr, int num_threads, long timeout)
         lock->black_end = NULL;
         lock->current_locked = NULL;
         lock->timeout = timeout;
-        lock->mutexxx = __MUTEX_INITIALIZER(lock->mutexxx);
+	DEFINE_MUTEX(new_mutex);
+        //lock->mutexxx = __MUTEX_INITIALIZER(&lock->mutexxx);
+	lock->mutex = &new_mutex;
 
         printk("init_bzz: %p %d %d\n", lock, num_threads, timeout);
 }
