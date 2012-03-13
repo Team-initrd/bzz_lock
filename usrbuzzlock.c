@@ -3,8 +3,6 @@
 pid_t gettid()
 {
 	return (pid_t)syscall(__NR_gettid);
-	//return 123;
-	//return syscall(SYS_gettids);
 }
 
 void add_thread(bzz_t *lock, bzz_thread *thread, int queue)
@@ -74,7 +72,7 @@ int timeval_subtract (struct timeval *result, struct timeval *x, struct timeval 
 	 *           tv_usec is certainly positive. */
 	result->tv_sec = x->tv_sec - y->tv_sec;
 	result->tv_usec = x->tv_usec - y->tv_usec;
-
+printf("sub: %ld, %ld\n", result->tv_sec, result->tv_usec);
 	/* Return 1 if result is negative. */
 	return x->tv_sec < y->tv_sec;
 }
@@ -84,6 +82,8 @@ int start_next_thread(bzz_t *lock)
 	bzz_thread *next_thread = NULL;
 	struct timeval timediff;
 	struct timeval current_time;
+
+	lock->current_locked = NULL;
 	gettimeofday(&current_time, NULL);
 	if (lock->gold_threads) {
 		timeval_subtract(&timediff, &current_time, &lock->gold_threads->time_created);
