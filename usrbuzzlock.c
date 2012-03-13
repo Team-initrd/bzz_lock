@@ -1,5 +1,10 @@
 #include "buzzlock.h"
 
+long int gettid()
+{
+	return (long int)syscall(224);
+}
+
 void add_thread(bzz_t *lock, bzz_thread *thread, int queue)
 {
 	if (!queue) {
@@ -60,7 +65,7 @@ int timeval_subtract (struct timeval *result, struct timeval *x, struct timeval 
 	if (x->tv_usec - y->tv_usec > 1000000) {
 		int nsec = (x->tv_usec - y->tv_usec) / 1000000;
 		y->tv_usec += 1000000 * nsec;
-		y->)v_sec -= nsec;
+		y->tv_sec -= nsec;
 	}
 
 	/* Compute the time remaining to wait.
@@ -80,7 +85,7 @@ int start_next_thread(bzz_t *lock)
 	gettimeofday(&current_time, NULL);
 	if (lock->gold_threads) {
 		timeval_subtract(&timediff, &current_time, &lock->gold_threads->time_created);
-		if (timediff->tv_usec > lock->timeout || timediff->tv_sec > (lock->timeout / 1000000)) {
+		if (timediff.tv_usec > lock->timeout || timediff.tv_sec > (lock->timeout / 1000000)) {
 			// oldest gold thread is over threashold
 			next_thread = lock->gold_threads;
 			lock->gold_threads = next_thread->next;
@@ -130,9 +135,9 @@ void init_bzz(bzz_t *lock, int num_threads, useconds_t timeout)
 	lock->black_end = NULL;
 	lock->current_locked = NULL;
 	lock->timeout = timeout;
-	pthread_mutex_init(lock->mutex, NULL);
+	pthread_mutex_init(&lock->mutex, NULL);
 	
-	printf("init_bzz: %d %d %d\n", *lock, num_threads, timeout);
+	printf("init_bzz: %p %d %d\n", lock, num_threads, timeout);
 
 	// allocate memory
 }
@@ -140,14 +145,14 @@ void init_bzz(bzz_t *lock, int num_threads, useconds_t timeout)
 void bzz_color(int color, bzz_t *lock)
 {
 	bzz_thread* new_thread = alloc_bzz_thread(color, gettid());
-	pthread_mutex_lock(lock->mutex);
+	pthread_mutex_lock(&lock->mutex);
 	add_thread(lock, new_thread, 0);
-	pthread_mutex_unlock(lock->mutex);
+	pthread_mutex_unlock(&lock->mutex);
 
 	if (color == BZZ_BLACK) {
-		printf("bzz_color: BLACK %d\n", *lock->tid);
+		printf("bzz_color: BLACK %d\n", new_thread->tid);
 	} else if (color == BZZ_GOLD) {
-		printf("bzz_color: GOLD %d\n", *lock->tid);
+		printf("bzz_color: GOLD %d\n", new_thread->tid);
 	}
 }
 
@@ -155,40 +160,40 @@ void bzz_lock(bzz_t *lock)
 {
 	// TODO: wait on bzz_thread's condition variable
 	// TODO: needs to happen differently if nothing has the lock
-	bzz_thread* to_lock = get_unqueued_thread(gettid());
+	bzz_thread* to_lock = get_unqueued_thread(lock, gettid());
 	if (to_lock == NULL)
 		return;
 
 	// Not currently locked
-	pthread_mutex_lock(lock->mutex);
+	pthread_mutex_lock(&lock->mutex);
 	if (lock->current_locked == NULL) {
 		lock->current_locked = to_lock;
 	} else {
 		queue_thread(lock, to_lock);
-		pthread_cond_wait(to_lock->cond, lock->mutex);
+		pthread_cond_wait(&to_lock->cond, &lock->mutex);
 		lock->current_locked = to_lock;
 	}
 	
-	pthread_mutex_unlock(lock->mutex);
+	pthread_mutex_unlock(&lock->mutex);
 
-	printf("bzz_lock: %x\n", lock);
+	printf("bzz_lock: %p\n", lock);
 }
 
 void bzz_release(bzz_t *lock)
 {
 	// TODO: find next thread to unlock and signal its condition
-	printf("bzz_release: %x\n", lock);
+	printf("bzz_release: %p\n", lock);
 	if (lock->current_locked->tid != gettid()) {
 		printf("You don't have the lock.\n");
 		return;
 	}
 
-	pthread_mutex_lock(lock->mutex);
+	pthread_mutex_lock(&lock->mutex);
 	start_next_thread(lock);
-	pthread_mutex_unlock(lock->mutex);
+	pthread_mutex_unlock(&lock->mutex);
 }
 
 void bzz_kill(bzz_t *lock)
 {
-	printf("bzz_kill: %d\n", *lock);
+	printf("bzz_kill: %p\n", lock);
 }
