@@ -4,6 +4,9 @@
 #include <linux/sched.h>
 #include <linux/init.h>
 #include <linux/time.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <uaccess.h>
 
 #define SYSBZZ_INIT 0
 #define SYSBZZ_COLOR 1
