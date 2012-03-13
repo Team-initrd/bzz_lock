@@ -7,6 +7,7 @@ pid_t gettid()
 
 void add_thread(bzz_t *lock, bzz_thread *thread, int queue)
 {
+	thread->next = NULL;
 	if (!queue) {
 		thread->next = lock->unqueued_threads;
 		lock->unqueued_threads = thread;
