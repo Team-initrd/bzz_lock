@@ -1,4 +1,9 @@
 #include <linux/linkage.h>
+#include <linux/vmalloc.h>
+#include <linux/kernel.h>
+#include <linux/sched.h>
+#include <linux/init.h>
+#include <linux/time.h>
 
 #define SYSBZZ_INIT 0
 #define SYSBZZ_COLOR 1
@@ -7,11 +12,10 @@
 #define SYSBZZ_KILL 4
 
 typedef struct _bzz_thread {
-        pthread_cond_t cond;
         int color;
         struct timeval time_created;
-        task_struct* task;
-        struct _bzz_thread* next;
+        struct task_struct *task;
+        struct _bzz_thread *next;
 } bzz_thread;
 
 typedef struct {
@@ -22,7 +26,7 @@ typedef struct {
         bzz_thread* unqueued_threads;
         bzz_thread* current_locked;
         useconds_t timeout;
-        pthread_mutex_t mutex;
+        struct mutex mutexxx;
 } bzz_t;
 
 typedef struct {
@@ -62,7 +66,6 @@ void add_thread(bzz_t *lock, bzz_thread *thread, int queue)
 		}
 		lock->gold_end->next = thread;
 		lock->gold_end = thread;
-
 	}
 }
 
@@ -70,11 +73,6 @@ void add_thread(bzz_t *lock, bzz_thread *thread, int queue)
 void queue_thread(bzz_t *lock, bzz_thread *thread)
 {
 	add_thread(lock, thread, 1);
-}
-
-void remove_thread(bzz_t *lock, bzz_thread *thread)
-{
-
 }
 
 bzz_thread* get_unqueued_thread(bzz_t *lock, pid_t tid)
@@ -114,20 +112,19 @@ int timeval_subtract (struct timeval *result, struct timeval *x, struct timeval 
 	 *           tv_usec is certainly positive. */
 	result->tv_sec = x->tv_sec - y->tv_sec;
 	result->tv_usec = x->tv_usec - y->tv_usec;
-printf("sub: %ld, %ld\n", result->tv_sec, result->tv_usec);
+	printk("sub: %ld, %ld\n", result->tv_sec, result->tv_usec);
 	/* Return 1 if result is negative. */
 	return x->tv_sec < y->tv_sec;
 }
-
 
 int start_next_thread(bzz_t *lock)
 {
 	bzz_thread *next_thread = NULL;
 	struct timeval timediff;
 	struct timeval current_time;
-
-	//lock->current_locked = NULL;
-	gettimeofday(&current_time, NULL);
+	
+	do_gettimeofday(&current_time);
+	
 	if (lock->gold_threads) {
 		timeval_subtract(&timediff, &current_time, &lock->gold_threads->time_created);
 		if (timediff.tv_usec > lock->timeout || timediff.tv_sec > (lock->timeout / 1000000)) {
@@ -153,7 +150,7 @@ int start_next_thread(bzz_t *lock)
 	}
 
 	lock->current_locked = next_thread;
-	pthread_cond_signal(&next_thread->cond);
+	wake_up_process(next_thread->task);
 	next_thread->next = NULL;
 	add_thread(lock, next_thread, 0);
 
@@ -161,14 +158,13 @@ int start_next_thread(bzz_t *lock)
 	
 }
 
-bzz_thread* alloc_bzz_thread(int color, pid_t tid)
+bzz_thread* alloc_bzz_thread(int color, struct task_struct *task)
 {
-	bzz_thread* new_thread = malloc(sizeof(bzz_thread));
+	bzz_thread* new_thread = vmalloc(sizeof(bzz_thread));
 
-	pthread_cond_init(&new_thread->cond, NULL);
+	new_thread->task = task;
 	new_thread->color = color;
-	gettimeofday(&new_thread->time_created, NULL);
-	new_thread->tid = tid;
+	do_gettimeofday(&new_thread->time_created);
 
 	return new_thread;
 }
@@ -176,7 +172,7 @@ bzz_thread* alloc_bzz_thread(int color, pid_t tid)
 
 void init_bzz(bzz_t **lock_ptr, int num_threads, useconds_t timeout)
 {
-	bzz_t* lock = kmalloc(sizeof(bzz_t));
+	bzz_t* lock = vmalloc(sizeof(bzz_t));
 	*lock_ptr = lock;
         lock->gold_threads = NULL;
         lock->gold_end = NULL;
@@ -184,24 +180,22 @@ void init_bzz(bzz_t **lock_ptr, int num_threads, useconds_t timeout)
         lock->black_end = NULL;
         lock->current_locked = NULL;
         lock->timeout = timeout;
-        pthread_mutex_init(&lock->mutex, NULL);
+        lock->mutexxx = __MUTEX_INITIALIZER(lock->mutexxx);
 
-        printf("init_bzz: %p %d %d\n", lock, num_threads, timeout);
-
-        // allocate memory
+        printk("init_bzz: %p %d %d\n", lock, num_threads, timeout);
 }
 
 void bzz_color(int color, bzz_t *lock)
 {
-	bzz_thread* new_thread = alloc_bzz_thread(color, gettid());
-	pthread_mutex_lock(&lock->mutex);
+	bzz_thread* new_thread = alloc_bzz_thread(color, current);
+	mutex_lock(&lock->mutexxx);
 	add_thread(lock, new_thread, 0);
-	pthread_mutex_unlock(&lock->mutex);
+	mutex_unlock(&lock->mutexxx);
 
 	if (color == BZZ_BLACK) {
-		printf("bzz_color: BLACK %d\n", new_thread->tid);
+		printk("bzz_color: BLACK %d\n", new_thread->tid);
 	} else if (color == BZZ_GOLD) {
-		printf("bzz_color: GOLD %d\n", new_thread->tid);
+		printk("bzz_color: GOLD %d\n", new_thread->tid);
 	}
 }
 
@@ -209,47 +203,46 @@ void bzz_lock(bzz_t *lock)
 {
 	// wait on bzz_thread's condition variable
 	// needs to happen differently if nothing has the lock
-	pthread_mutex_lock(&lock->mutex);
+	mutex_lock(&lock->mutexxx);
 	bzz_thread* to_lock = get_unqueued_thread(lock, gettid());
 	if (to_lock == NULL) {
-		printf("ERROR: Thread color not initialized. TID:%d\n", gettid());
-		pthread_mutex_unlock(&lock->mutex);
+		printk("ERROR: Thread color not initialized. TID:%d\n", gettid());
+		mutex_unlock(&lock->mutexxx);
 		return;
 	}
 
 	// Not currently locked
-	//pthread_mutex_lock(&lock->mutex);
 	if (lock->current_locked == NULL) {
 		lock->current_locked = to_lock;
 	} else {
 		queue_thread(lock, to_lock);
-		pthread_cond_wait(&to_lock->cond, &lock->mutex);
+		set_current_state(TASK_INTERRUPTIBLE);
+		schedule();
 		lock->current_locked = to_lock;
 	}
 
-	pthread_mutex_unlock(&lock->mutex);
+	mutex_unlock(&lock->mutexxx);
 
-	printf("bzz_lock: %d, color: %d\n", to_lock->tid, to_lock->color);
+	printk("bzz_lock: %d, color: %d\n", to_lock->tid, to_lock->color);
 }
 
 void bzz_release(bzz_t *lock)
 {
 	// find next thread to unlock and signal its condition
-	printf("bzz_release: %p tid: %d\n", lock, gettid());
-	pthread_mutex_lock(&lock->mutex);
+	printk("bzz_release: %p tid: %d\n", lock, gettid());
+	mutex_lock(&lock->mutexxx);
 	if (lock->current_locked->tid != gettid()) {
-		printf("ERROR: You don't have the lock.\n");
+		printk("ERROR: You don't have the lock.\n");
 		return;
 	}
 
-	//pthread_mutex_lock(&lock->mutex);
 	start_next_thread(lock);
-	pthread_mutex_unlock(&lock->mutex);
+	mutex_unlock(&lock->mutexxx);
 }
 
 void bzz_kill(bzz_t *lock)
 {
-        printf("bzz_kill: %p\n", lock);
+        printk("bzz_kill: %p\n", lock);
 }
 
 asmlinkage long sys_bzz(int argid, void *arg)
@@ -257,26 +250,36 @@ asmlinkage long sys_bzz(int argid, void *arg)
 	bzz_init_args init_args;
 	bzz_color_args color_args;
 	bzz_t* lock_ptr;
-	switch (argid))
+	switch (argid)
 	{
 		case SYSBZZ_INIT:
 			copy_from_user(&init_args, arg, sizeof(bzz_init_args));
 			init_bzz(&init_args.lock, init_args.num_threads, init_args.timeout);
 			copy_to_user(arg, &init_args, sizeof(bzz_init_args));
+			printk("SYSBZZ: well, init ran\n");
 			break;
 		case SYSBZZ_COLOR:
 			copy_from_user(&color_args, arg, sizeof(bzz_color_args));
 			bzz_color(color_args.color, color_args.lock);
+			copy_to_user(arg, &color_args, sizeof(bzz_color_args));
 			break;
 		case SYSBZZ_LOCK:
-			copy_from_user(&lock_ptr, arg, sizeof(bzz_t*));
-
+			/*copy_from_user(&lock_ptr, arg, sizeof(bzz_t*));
+			bzz_lock(lock_ptr);
+			copy_to_user(arg, &lock_ptr, sizeof(bzz_t*));*/
+			bzz_lock(arg);
 			break;
 		case SYSBZZ_RELEASE:
-			copy_from_user(&lock_ptr, arg, sizeof(bzz_t*));
+			/*copy_from_user(&lock_ptr, arg, sizeof(bzz_t*));
+			bzz_release(lock_ptr);
+			copy_to_user(arg, &lock_ptr, sizeof(bzz_t*));*/
+			bzz_release(arg);
 			break;
 		case SYSBZZ_KILL:
-			copy_from_user(&lock_ptr, arg, sizeof(bzz_t*));
+			/*copy_from_user(&lock_ptr, arg, sizeof(bzz_t*));
+			bzz_kill(lock_ptr);
+			copy_to_user(arg, &lock_ptr, sizeof(bzz_t*));*/
+			bzz_kill(arg);
 			break;
 		default:
 			return -1;
