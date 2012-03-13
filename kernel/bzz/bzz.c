@@ -211,7 +211,7 @@ void bzz_lock(bzz_t *lock)
 	mutex_lock(&lock->mutexxx);
 	bzz_thread* to_lock = get_unqueued_thread(lock, current);
 	if (to_lock == NULL) {
-		printk("ERROR: Thread color not initialized. TID:%d\n", current;
+		printk("ERROR: Thread color not initialized. TID:%d\n", current);
 		mutex_unlock(&lock->mutexxx);
 		return;
 	}
@@ -228,13 +228,13 @@ void bzz_lock(bzz_t *lock)
 
 	mutex_unlock(&lock->mutexxx);
 
-	printk("bzz_lock: %p, color: %d\n", to_lock->current, to_lock->color);
+	printk("bzz_lock: %p, color: %d\n", to_lock->task, to_lock->color);
 }
 
 void bzz_release(bzz_t *lock)
 {
 	// find next thread to unlock and signal its condition
-	printk("bzz_release: %p tid: %p\n", lock, current;
+	printk("bzz_release: %p tid: %p\n", lock, current);
 	mutex_lock(&lock->mutexxx);
 	if (lock->current_locked->task != current {
 		printk("ERROR: You don't have the lock.\n");
