@@ -185,7 +185,7 @@ void init_bzz(bzz_t **lock_ptr, int num_threads, long timeout)
         lock->timeout = timeout;
 	DEFINE_MUTEX(new_mutex);
         //lock->mutexxx = __MUTEX_INITIALIZER(&lock->mutexxx);
-	lock->mutex = &new_mutex;
+	lock->mutexxx = &new_mutex;
 
         printk("init_bzz: %p %d %d\n", lock, num_threads, timeout);
 }
@@ -209,7 +209,7 @@ void bzz_lock(bzz_t *lock)
 	// wait on bzz_thread's condition variable
 	// needs to happen differently if nothing has the lock
 	mutex_lock(&lock->mutexxx);
-	bzz_thread* to_lock = get_unqueued_thread(lock, current;
+	bzz_thread* to_lock = get_unqueued_thread(lock, current);
 	if (to_lock == NULL) {
 		printk("ERROR: Thread color not initialized. TID:%d\n", current;
 		mutex_unlock(&lock->mutexxx);
