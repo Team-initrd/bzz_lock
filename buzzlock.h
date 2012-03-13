@@ -18,7 +18,7 @@
 
 #ifdef BZZ_KERNEL_MODE
 // TODO: kernel mode structures
-typedef uint32_t bzz_t;
+typedef void* bzz_t;
 
 #else
 typedef struct _bzz_thread {

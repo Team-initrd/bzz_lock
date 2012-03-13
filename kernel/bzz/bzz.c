@@ -250,6 +250,7 @@ asmlinkage long sys_bzz(int argid, void *arg)
 	bzz_init_args init_args;
 	bzz_color_args color_args;
 	bzz_t* lock_ptr;
+	printk("Running sys_bzz\n");
 	switch (argid)
 	{
 		case SYSBZZ_INIT:

@@ -5,17 +5,18 @@
 void init_bzz(bzz_t *lock, int num_threads, useconds_t timeout)
 {
 	struct {
-		bzz_t *lock;
+		bzz_t lock;
 		int num_threads;
 		useconds_t timeout;
 	} arg;
 	
-	arg.lock = lock;
+	//arg.lock = lock;
 	arg.num_threads = num_threads;
 	arg.timeout = timeout;
 	
 	if (syscall(__NR_bzz, SYSBZZ_INIT, (void *) &arg) < 0)
 		fprintf(stderr, "init_bzz error\n");
+	*lock = arg.lock; 
 }
 
 void bzz_color(int color, bzz_t *lock)

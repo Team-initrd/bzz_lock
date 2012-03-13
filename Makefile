@@ -16,7 +16,7 @@ usrbuzzlock : usrbuzzlock.c
 tester : tester.c usrbuzzlock
 	gcc -Wall -L$(shell pwd) tester.c -lbuzzlock -o tester
 
-usrbuzzlock kernbuzzlock tester test : buzzlock.h
+usrbuzzlock kernbuzzlock tester test test2 : buzzlock.h
 
 runtester : tester
 	LD_LIBRARY_PATH=$(shell pwd):$$LD_LIBRARY_PATH ./tester
