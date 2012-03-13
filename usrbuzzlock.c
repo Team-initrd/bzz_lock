@@ -5,6 +5,7 @@ pid_t gettid()
 	return (pid_t)syscall(__NR_gettid);
 }
 
+// add a thread awaiting the lock to its respective queue
 void add_thread(bzz_t *lock, bzz_thread *thread, int queue)
 {
 	thread->next = NULL;
@@ -13,7 +14,8 @@ void add_thread(bzz_t *lock, bzz_thread *thread, int queue)
 		lock->unqueued_threads = thread;
 		return;
 	}
-
+	
+	// if queue == 1, add the thread to the end of its respective color queue
 	if (thread->color == BZZ_BLACK) {
 		if (lock->black_threads == NULL || lock->black_end == NULL) {
 			lock->black_threads = thread;
@@ -40,11 +42,8 @@ void queue_thread(bzz_t *lock, bzz_thread *thread)
 	add_thread(lock, thread, 1);
 }
 
-void remove_thread(bzz_t *lock, bzz_thread *thread)
-{
-
-}
-
+// searches the lock's unqueued list for thread matching tid and removes it,
+// returning pointer to it
 bzz_thread* get_unqueued_thread(bzz_t *lock, pid_t tid)
 {
 	bzz_thread* curr = lock->unqueued_threads;
@@ -82,7 +81,7 @@ int timeval_subtract (struct timeval *result, struct timeval *x, struct timeval 
 	 *           tv_usec is certainly positive. */
 	result->tv_sec = x->tv_sec - y->tv_sec;
 	result->tv_usec = x->tv_usec - y->tv_usec;
-printf("sub: %ld, %ld\n", result->tv_sec, result->tv_usec);
+	printf("sub: %ld, %ld\n", result->tv_sec, result->tv_usec);
 	/* Return 1 if result is negative. */
 	return x->tv_sec < y->tv_sec;
 }
@@ -93,7 +92,7 @@ int start_next_thread(bzz_t *lock)
 	struct timeval timediff;
 	struct timeval current_time;
 
-	//lock->current_locked = NULL;
+	// get expired gold thread from front of queue
 	gettimeofday(&current_time, NULL);
 	if (lock->gold_threads) {
 		timeval_subtract(&timediff, &current_time, &lock->gold_threads->time_created);
@@ -106,13 +105,15 @@ int start_next_thread(bzz_t *lock)
 		}
 	}
 
-	// Get black thread
+	// Get black thread from front of queue
 	if (next_thread == NULL && lock->black_threads) {
 		next_thread = lock->black_threads;
 		lock->black_threads = next_thread->next;
 		if (lock->black_end == next_thread)
 			lock->black_end = NULL;
 	}
+	
+	// TODO get non-expired gold thread?
 
 	if (next_thread == NULL) {
 		lock->current_locked = NULL;
@@ -122,6 +123,7 @@ int start_next_thread(bzz_t *lock)
 	lock->current_locked = next_thread;
 	pthread_cond_signal(&next_thread->cond);
 	next_thread->next = NULL;
+	// add thread back to unqueued list
 	add_thread(lock, next_thread, 0);
 
 	return 1;
@@ -151,14 +153,13 @@ void init_bzz(bzz_t *lock, int num_threads, useconds_t timeout)
 	pthread_mutex_init(&lock->mutex, NULL);
 	
 	printf("init_bzz: %p %d %d\n", lock, num_threads, timeout);
-
-	// allocate memory
 }
 
 void bzz_color(int color, bzz_t *lock)
 {
 	bzz_thread* new_thread = alloc_bzz_thread(color, gettid());
 	pthread_mutex_lock(&lock->mutex);
+	// add thread to unqueued list
 	add_thread(lock, new_thread, 0);
 	pthread_mutex_unlock(&lock->mutex);
 
@@ -182,7 +183,6 @@ void bzz_lock(bzz_t *lock)
 	}
 
 	// Not currently locked
-	//pthread_mutex_lock(&lock->mutex);
 	if (lock->current_locked == NULL) {
 		lock->current_locked = to_lock;
 	} else {
@@ -206,7 +206,6 @@ void bzz_release(bzz_t *lock)
 		return;
 	}
 
-	//pthread_mutex_lock(&lock->mutex);
 	start_next_thread(lock);
 	pthread_mutex_unlock(&lock->mutex);
 }
@@ -214,4 +213,10 @@ void bzz_release(bzz_t *lock)
 void bzz_kill(bzz_t *lock)
 {
 	printf("bzz_kill: %p\n", lock);
+	
+	// TODO free all black, gold, and unqueued
+	
+	
+	pthread_mutex_destroy(&lock->mutex);
+	
 }
