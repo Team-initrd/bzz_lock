@@ -28,7 +28,7 @@ typedef struct {
         bzz_thread* black_end;
         bzz_thread* unqueued_threads;
         bzz_thread* current_locked;
-        long timeout;
+        int timeout;
         struct mutex *mutexxx;
 } bzz_t;
 
@@ -193,9 +193,9 @@ void init_bzz(bzz_t **lock_ptr, int num_threads, long timeout)
 void bzz_color(int color, bzz_t *lock)
 {
 	bzz_thread* new_thread = alloc_bzz_thread(color, current);
-	mutex_lock(&lock->mutexxx);
+	mutex_lock(lock->mutexxx);
 	add_thread(lock, new_thread, 0);
-	mutex_unlock(&lock->mutexxx);
+	mutex_unlock(lock->mutexxx);
 
 	if (color == BZZ_BLACK) {
 		printk("bzz_color: BLACK %p\n", new_thread->task);
@@ -208,11 +208,11 @@ void bzz_lock(bzz_t *lock)
 {
 	// wait on bzz_thread's condition variable
 	// needs to happen differently if nothing has the lock
-	mutex_lock(&lock->mutexxx);
+	mutex_lock(lock->mutexxx);
 	bzz_thread* to_lock = get_unqueued_thread(lock, current);
 	if (to_lock == NULL) {
 		printk("ERROR: Thread color not initialized. TID:%d\n", current);
-		mutex_unlock(&lock->mutexxx);
+		mutex_unlock(lock->mutexxx);
 		return;
 	}
 
@@ -226,7 +226,7 @@ void bzz_lock(bzz_t *lock)
 		lock->current_locked = to_lock;
 	}
 
-	mutex_unlock(&lock->mutexxx);
+	mutex_unlock(lock->mutexxx);
 
 	printk("bzz_lock: %p, color: %d\n", to_lock->task, to_lock->color);
 }
@@ -235,14 +235,14 @@ void bzz_release(bzz_t *lock)
 {
 	// find next thread to unlock and signal its condition
 	printk("bzz_release: %p tid: %p\n", lock, current);
-	mutex_lock(&lock->mutexxx);
+	mutex_lock(lock->mutexxx);
 	if (lock->current_locked->task != current) {
 		printk("ERROR: You don't have the lock.\n");
 		return;
 	}
 
 	start_next_thread(lock);
-	mutex_unlock(&lock->mutexxx);
+	mutex_unlock(lock->mutexxx);
 }
 
 void bzz_kill(bzz_t *lock)
