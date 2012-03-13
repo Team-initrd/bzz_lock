@@ -1,15 +1,19 @@
 .PHONY: clean all
 
-all: usrbuzzlock.o tester
+all : usrbuzzlock tester
 
-clean:
-	-rm libbuzzlock.so usrbuzzlock.o tester
+clean :
+	-rm libbuzzlock.so usrbuzzlock.o kernbuzzlock.o tester
 
-usrbuzzlock.o : usrbuzzlock.c
+kernbuzzlock : kernbuzzlock.c
+	gcc -Wall -fPIC -c kernbuzzlock.c
+	gcc -shared -W1,-soname,libbuzzlock.so -o libbuzzlock.so kernbuzzlock.o
+
+usrbuzzlock : usrbuzzlock.c
 	gcc -Wall -fPIC -c usrbuzzlock.c
 	gcc -shared -W1,-soname,libbuzzlock.so -o libbuzzlock.so usrbuzzlock.o
 
 tester : tester.c
 	gcc -Wall -L$(shell pwd) tester.c -lbuzzlock -o tester
 
-usrbuzzlock.o tester : buzzlock.h
+usrbuzzlock kernbuzzlock tester : buzzlock.h

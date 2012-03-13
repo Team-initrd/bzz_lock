@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
+#include <sys/syscall.h>
 
 #define BZZ_BLACK 0
 #define BZZ_GOLD 1
