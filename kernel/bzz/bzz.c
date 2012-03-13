@@ -173,7 +173,7 @@ bzz_thread* alloc_bzz_thread(int color, struct task_struct *task)
 }
 
 
-void init_bzz(bzz_t **lock_ptr, int num_threads, long timeout)
+void init_bzz(bzz_t **lock_ptr, int num_threads, int timeout)
 {
 	DEFINE_MUTEX(new_mutex);
 	bzz_t* lock = vmalloc(sizeof(bzz_t));
