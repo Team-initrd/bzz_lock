@@ -60,5 +60,6 @@ printf("Time: %ld, %ld\n", time.tv_sec, time.tv_nsec);*/
 	}
 
 	bzz_kill(&GTLOCK);
+	
 	return 0;
 }
