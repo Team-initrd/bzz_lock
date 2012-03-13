@@ -10,6 +10,11 @@
 
 #define BZZ_BLACK 0
 #define BZZ_GOLD 1
+#define SYSBZZ_INIT 0
+#define SYSBZZ_COLOR 1
+#define SYSBZZ_LOCK 2
+#define SYSBZZ_RELEASE 3
+#define SYSBZZ_KILL 4
 
 #ifdef BZZ_KERNEL_MODE
 // TODO: kernel mode structures
