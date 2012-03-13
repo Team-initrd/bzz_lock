@@ -4,7 +4,7 @@
 #include <linux/sched.h>
 #include <linux/init.h>
 #include <linux/time.h>
-#include <uaccess.h>
+#include <asm/uaccess.h>
 
 #define SYSBZZ_INIT 0
 #define SYSBZZ_COLOR 1
@@ -35,7 +35,7 @@ typedef struct {
 typedef struct {
 	bzz_t* lock;
 	int num_threads;
-	useconds_t timeout;
+	long timeout;
 } bzz_init_args;
 
 typedef struct {
@@ -173,7 +173,7 @@ bzz_thread* alloc_bzz_thread(int color, struct task_struct *task)
 }
 
 
-void init_bzz(bzz_t **lock_ptr, int num_threads, useconds_t timeout)
+void init_bzz(bzz_t **lock_ptr, int num_threads, long timeout)
 {
 	bzz_t* lock = vmalloc(sizeof(bzz_t));
 	*lock_ptr = lock;
@@ -196,9 +196,9 @@ void bzz_color(int color, bzz_t *lock)
 	mutex_unlock(&lock->mutexxx);
 
 	if (color == BZZ_BLACK) {
-		printk("bzz_color: BLACK %d\n", new_thread->tid);
+		printk("bzz_color: BLACK %p\n", new_thread->task);
 	} else if (color == BZZ_GOLD) {
-		printk("bzz_color: GOLD %d\n", new_thread->tid);
+		printk("bzz_color: GOLD %p\n", new_thread->task);
 	}
 }
 
@@ -207,9 +207,9 @@ void bzz_lock(bzz_t *lock)
 	// wait on bzz_thread's condition variable
 	// needs to happen differently if nothing has the lock
 	mutex_lock(&lock->mutexxx);
-	bzz_thread* to_lock = get_unqueued_thread(lock, gettid());
+	bzz_thread* to_lock = get_unqueued_thread(lock, current;
 	if (to_lock == NULL) {
-		printk("ERROR: Thread color not initialized. TID:%d\n", gettid());
+		printk("ERROR: Thread color not initialized. TID:%d\n", current;
 		mutex_unlock(&lock->mutexxx);
 		return;
 	}
@@ -226,15 +226,15 @@ void bzz_lock(bzz_t *lock)
 
 	mutex_unlock(&lock->mutexxx);
 
-	printk("bzz_lock: %d, color: %d\n", to_lock->tid, to_lock->color);
+	printk("bzz_lock: %p, color: %d\n", to_lock->current, to_lock->color);
 }
 
 void bzz_release(bzz_t *lock)
 {
 	// find next thread to unlock and signal its condition
-	printk("bzz_release: %p tid: %d\n", lock, gettid());
+	printk("bzz_release: %p tid: %p\n", lock, current;
 	mutex_lock(&lock->mutexxx);
-	if (lock->current_locked->tid != gettid()) {
+	if (lock->current_locked->task != current {
 		printk("ERROR: You don't have the lock.\n");
 		return;
 	}
