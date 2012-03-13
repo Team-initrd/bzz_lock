@@ -256,9 +256,7 @@ asmlinkage long sys_bzz(int argid, void *arg)
 	bzz_init_args init_args;
 	bzz_color_args color_args;
 	bzz_t* lock_ptr;
-	printk(KERN_DEBUG "Running sys_bzz\n");
-	printk(KERN_WARNING "running sys_bzz 2\n");
-	printk(KERN_ERR "running sys_bzz 3\n");
+	printk(KERN_DEBUG "Running sys_bzz: argid %d\n", argid);
 	switch (argid)
 	{
 		case SYSBZZ_INIT:
