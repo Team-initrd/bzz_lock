@@ -29,7 +29,7 @@ typedef struct {
         bzz_thread* unqueued_threads;
         bzz_thread* current_locked;
         long timeout;
-        struct mutex mutexxx;
+        struct mutex *mutexxx;
 } bzz_t;
 
 typedef struct {
