@@ -27,7 +27,7 @@ typedef struct {
 	bzz_thread* gold_end;
 	bzz_thread* black_threads;
 	bzz_thread* black_end;
-	bzz_thread* unlocked_threads;
+	bzz_thread* unqueued_threads;
 	bzz_thread* current_locked;
 	useconds_t timeout;
 	pthread_mutex_t mutex;
