@@ -179,7 +179,7 @@ void bzz_lock(bzz_t *lock)
 	
 	pthread_mutex_unlock(&lock->mutex);
 
-	printf("bzz_lock: %p\n", lock);
+	printf("bzz_lock: %d\n", to_lock->tid);
 }
 
 void bzz_release(bzz_t *lock)
