@@ -1,8 +1,10 @@
 #include "buzzlock.h"
 
-long int gettid()
+pid_t gettid()
 {
-	return (long int)syscall(224);
+	return (pid_t)syscall(__NR_gettid);
+	//return 123;
+	//return syscall(SYS_gettids);
 }
 
 void add_thread(bzz_t *lock, bzz_thread *thread, int queue)

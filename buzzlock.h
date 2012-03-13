@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <time.h>
+#include <sys/syscall.h>
 
 #define BZZ_BLACK 0
 #define BZZ_GOLD 1
