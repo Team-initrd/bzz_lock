@@ -40,10 +40,6 @@ void queue_thread(bzz_t *lock, bzz_thread *thread)
 	add_thread(lock, thread, 1);
 }
 
-void remove_thread(bzz_t *lock, bzz_thread *thread)
-{
-
-}
 
 bzz_thread* get_unqueued_thread(bzz_t *lock, pid_t tid)
 {
