@@ -10,6 +10,7 @@ void add_thread(bzz_t *lock, bzz_thread *thread, int queue)
 {
 	thread->next = NULL;
 	if (queue == 0) {
+		// add to front of unqueued_threads
 		thread->next = lock->unqueued_threads;
 		lock->unqueued_threads = thread;
 		return;
@@ -43,7 +44,7 @@ void queue_thread(bzz_t *lock, bzz_thread *thread)
 }
 
 // searches the lock's unqueued list for thread matching tid and removes it,
-// returning pointer to it
+// returning a pointer to it
 bzz_thread* get_unqueued_thread(bzz_t *lock, pid_t tid)
 {
 	bzz_thread* curr = lock->unqueued_threads;
@@ -97,7 +98,7 @@ int start_next_thread(bzz_t *lock)
 	if (lock->gold_threads) {
 		timeval_subtract(&timediff, &current_time, &lock->gold_threads->time_created);
 		if (timediff.tv_usec > lock->timeout || timediff.tv_sec > (lock->timeout / 1000000)) {
-			// oldest gold thread is over threashold
+			// oldest gold thread is over threshold
 			next_thread = lock->gold_threads;
 			lock->gold_threads = next_thread->next;
 			if (lock->gold_end == next_thread)
@@ -114,6 +115,12 @@ int start_next_thread(bzz_t *lock)
 	}
 	
 	// TODO get non-expired gold thread?
+	/*if (next_thread == NULL) {
+		next_thread = lock->gold_threads;
+		lock->gold_threads = next_thread->next;
+		if (lock->gold_end == next_thread)
+			lock->gold_end = NULL;
+	}*/
 
 	if (next_thread == NULL) {
 		lock->current_locked = NULL;
@@ -123,7 +130,7 @@ int start_next_thread(bzz_t *lock)
 	lock->current_locked = next_thread;
 	pthread_cond_signal(&next_thread->cond);
 	next_thread->next = NULL;
-	// add thread back to unqueued list
+	// add thread to unqueued list
 	add_thread(lock, next_thread, 0);
 
 	return 1;
@@ -212,11 +219,28 @@ void bzz_release(bzz_t *lock)
 
 void bzz_kill(bzz_t *lock)
 {
+	bzz_thread *thd;
+	int i = 0;	
+	
 	printf("bzz_kill: %p\n", lock);
 	
-	// TODO free all black, gold, and unqueued
+	if (lock->gold_threads || lock->black_threads || lock->gold_end || lock->black_end || lock->current_locked)
+	{
+		printf("WHAT ARE YOU DOING?????\n");
+		return;
+	}
 	
+	// free all unqueued
+	while ((thd = lock->unqueued_threads))
+	{
+		printf("freeing: %d %d\n", thd->tid, i);
+		lock->unqueued_threads = lock->unqueued_threads->next;
+		pthread_cond_destroy(&thd->cond);
+		free(thd);
+		i++;
+	}
 	
 	pthread_mutex_destroy(&lock->mutex);
-	
+	memset(&lock->mutex, 0, sizeof(pthread_mutex_t));
+	lock->timeout = 0;
 }
