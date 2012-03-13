@@ -239,7 +239,7 @@ void bzz_kill(bzz_t *lock)
 		free(thd);
 		i++;
 	}
-	
+		
 	pthread_mutex_destroy(&lock->mutex);
 	memset(&lock->mutex, 0, sizeof(pthread_mutex_t));
 	lock->timeout = 0;
