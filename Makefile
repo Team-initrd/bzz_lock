@@ -14,7 +14,7 @@ usrbuzzlock : usrbuzzlock.c
 	gcc -shared -g -W1,-soname,libbuzzlock.so -o libbuzzlock.so usrbuzzlock.o
 
 tester : tester.c kernbuzzlock
-	gcc -Wall -L$(shell pwd) tester.c -lbuzzlock -o tester
+	gcc -Wall -L$(shell pwd) -DBZZ_KERNEL_MODE tester.c -lbuzzlock -o tester
 
 usrbuzzlock kernbuzzlock tester test test2 : buzzlock.h
 
@@ -25,7 +25,7 @@ test : test.c usrbuzzlock
 	gcc -Wall -L$(shell pwd) test.c -g -fopenmp -lbuzzlock -o test
 
 test2 : test.c kernbuzzlock
-	gcc -Wall -L$(shell pwd) test.c -g -fopenmp -lbuzzlock -o test
+	gcc -Wall -L$(shell pwd) -DBZZ_KERNEL_MODE test.c -g -fopenmp -lbuzzlock -o test
 
 runtest : test
 	LD_LIBRARY_PATH=$(shell pwd):$$LD_LIBRARY_PATH ./test
