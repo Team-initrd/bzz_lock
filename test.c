@@ -15,7 +15,7 @@
 #define ACTIVITY 5 // in us
 bzz_t GTLOCK;
 
-int ng;
+int ng, rt;
 
 void thread(){
 	struct timeval t1,t2;
@@ -25,6 +25,7 @@ void thread(){
 	if(ID<=ng) bzz_color(BZZ_GOLD, &GTLOCK); 
 	else  bzz_color(BZZ_BLACK, &GTLOCK);     // SET COLOR OF LOCK HERE Depending on condiion
 	gettimeofday(&t1,NULL);
+	if (rt) usleep(rand() % rt); // random sleep
 	bzz_lock(&GTLOCK);
 	usleep(ACTIVITY); // ACTIVITY
 	bzz_release(&GTLOCK);
@@ -43,20 +44,20 @@ void thread(){
 int main(int argc, char *argv[]){
 	
 	int tc, to;
+	rt = 0;
+		
+	// seed random number generator
+	srand(time(NULL));
 	
 	if (argc < 4) {
-		printf("usage: test <threadcount> <numgold> <[timeout] | r>\n");
+		printf("usage: test <threadcount> <numgold> <timeout> [presleepmax]\n");
 		return 1;
 	}
 	
 	tc = atoi(argv[1]);
 	ng = atoi(argv[2]);
-	
-	if (argv[3][0] == 'r') {
-		to = 112233; //random timeout
-	} else {
-		to = atoi(argv[3]);
-	}
+	to = atoi(argv[3]);
+	if (argc == 5) rt = atoi(argv[4]);
 	
 	if (ng > tc) {
 		printf("number of gold threads cannot exceed total threads!\n");
@@ -66,6 +67,7 @@ int main(int argc, char *argv[]){
 	printf("thread count: %d\n", tc);
 	printf("number gold: %d\n", ng);
 	printf("thread timeout: %d\n", to);
+	printf("random max: %d\n", rt);
 	
 	omp_set_num_threads(tc);
 	init_bzz(&GTLOCK,THREADPOOL,to);
