@@ -16,6 +16,8 @@
 bzz_t GTLOCK;
 
 int ng, rt;
+double avg_gold_time;
+double avg_black_time;
 
 void thread(){
 	struct timeval t1,t2;
@@ -24,8 +26,8 @@ void thread(){
 
 	if(ID<=ng) bzz_color(BZZ_GOLD, &GTLOCK); 
 	else  bzz_color(BZZ_BLACK, &GTLOCK);     // SET COLOR OF LOCK HERE Depending on condiion
-	gettimeofday(&t1,NULL);
 	if (rt) usleep(rand() % rt); // random sleep
+	gettimeofday(&t1,NULL);
 	bzz_lock(&GTLOCK);
 	usleep(ACTIVITY); // ACTIVITY
 	bzz_release(&GTLOCK);
@@ -34,8 +36,13 @@ void thread(){
 	elapsedTime = (t2.tv_sec - t1.tv_sec);      // sec 
 	elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000000.0;   //  us
 
-	if(ID<=ng) printf("1,%f,%d\n",elapsedTime, omp_get_thread_num());
-	else printf("0,%f,%d\n",elapsedTime, omp_get_thread_num());
+	if(ID<=ng) {
+		avg_gold_time += elapsedTime;
+		printf("gold,%f,%d\n",elapsedTime, omp_get_thread_num());
+	} else {
+		avg_black_time += elapsedTime;
+		printf("black,%f,%d\n",elapsedTime, omp_get_thread_num());
+	}
 }
 
 
@@ -43,6 +50,7 @@ int main(int argc, char *argv[]){
 	
 	int tc, to;
 	rt = 0;
+	avg_gold_time = avg_black_time = 0;
 		
 	// seed random number generator
 	srand(time(NULL));
@@ -81,10 +89,14 @@ printf("Time: %ld, %ld\n", time.tv_sec, time.tv_nsec);
 clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time);
 printf("Time: %ld, %ld\n", time.tv_sec, time.tv_nsec);*/
 
-	#pragma omp parallel
+	#pragma omp parallel reduction(+:avg_gold_time) reduction(+:avg_black_time)
 	{
 		thread();
 	}
+
+	avg_gold_time /= GOLD;
+	avg_black_time /= BLACK;
+	printf("Avg Gold Wait: %f\nAvg Black Wait: %f\n", avg_gold_time, avg_black_time);
 
 	bzz_kill(&GTLOCK);
 	
