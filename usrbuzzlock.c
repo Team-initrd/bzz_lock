@@ -191,6 +191,7 @@ void bzz_lock(bzz_t *lock)
 
 	// Not currently locked
 	if (lock->current_locked == NULL) {
+		queue_thread(lock, to_lock, 0);
 		lock->current_locked = to_lock;
 	} else {
 		queue_thread(lock, to_lock);
