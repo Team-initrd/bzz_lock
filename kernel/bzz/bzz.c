@@ -184,7 +184,8 @@ void init_bzz(bzz_t **lock_ptr, int num_threads, int timeout)
         lock->black_end = NULL;
         lock->current_locked = NULL;
         lock->timeout = timeout;
-        lock->mutexxx = mutex_init(&lock->mutexxx);
+	lock->mutexxx = vmalloc(sizeof(struct mutex));
+        lock->mutexxx = mutex_init(lock->mutexxx);
 	//lock->mutexxx = &new_mutex;
 
         printk("init_bzz: %p %d %d\n", lock, num_threads, timeout);
