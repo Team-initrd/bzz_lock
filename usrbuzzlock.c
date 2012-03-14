@@ -151,7 +151,6 @@ bzz_thread* alloc_bzz_thread(int color, pid_t tid)
 
 void init_bzz(bzz_t *lock, int num_threads, useconds_t timeout)
 {
-	lock = (bzz_t *) malloc(sizeof(bzz_t));
 	lock->gold_threads = NULL;
 	lock->gold_end = NULL;
 	lock->black_threads = NULL;

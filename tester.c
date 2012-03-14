@@ -2,10 +2,10 @@
 
 int main(int argc, char *argv[])
 {
-	bzz_t *lock;
+	bzz_t lock;
 	
 	init_bzz(&lock, 420, 666);
-	printf("%p\n", lock);
+	printf("%p\n", (void *) lock);
 	
 	return 0;
 }
