@@ -1,30 +1,32 @@
-.PHONY: clean all
-
-all : usrbuzzlock tester
+.PHONY: clean
 
 clean :
 	-rm libbuzzlock.so usrbuzzlock.o kernbuzzlock.o tester test
 
-kernbuzzlock : kernbuzzlock.c
+kern : kernbuzzlock.c
 	gcc -Wall -fPIC -g -DBZZ_KERNEL_MODE -c kernbuzzlock.c
 	gcc -shared -g -W1,-soname,libbuzzlock.so -o libbuzzlock.so kernbuzzlock.o
 
-usrbuzzlock : usrbuzzlock.c
+usr : usrbuzzlock.c
 	gcc -Wall -fPIC -g -c usrbuzzlock.c
 	gcc -shared -g -W1,-soname,libbuzzlock.so -o libbuzzlock.so usrbuzzlock.o
 
-tester : tester.c kernbuzzlock
+usrdebug : usrbuzzlock.c
+	gcc -Wall -fPIC -g -c usrbuzzlock.c
+	gcc -shared -g -W1,-soname,libbuzzlock.so -o libbuzzlock.so usrbuzzlock.o
+
+tester : tester.c kern
 	gcc -Wall -L$(shell pwd) -DBZZ_KERNEL_MODE tester.c -lbuzzlock -o tester
 
-usrbuzzlock kernbuzzlock tester test test2 : buzzlock.h
+usr usrdebug kern tester test test2 : buzzlock.h
 
 runtester : tester
 	LD_LIBRARY_PATH=$(shell pwd):$$LD_LIBRARY_PATH ./tester
 
-test : test.c usrbuzzlock
+test : test.c usr
 	gcc -Wall -L$(shell pwd) test.c -g -fopenmp -lbuzzlock -o test
 
-test2 : test.c kernbuzzlock
+test2 : test.c kern
 	gcc -Wall -L$(shell pwd) -DBZZ_KERNEL_MODE test.c -g -fopenmp -lbuzzlock -o test
 
 runtest : test

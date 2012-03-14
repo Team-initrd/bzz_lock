@@ -115,7 +115,9 @@ int timeval_subtract (struct timeval *result, struct timeval *x, struct timeval 
 	 *           tv_usec is certainly positive. */
 	result->tv_sec = x->tv_sec - y->tv_sec;
 	result->tv_usec = x->tv_usec - y->tv_usec;
+	
 	printk("sub: %ld, %ld\n", result->tv_sec, result->tv_usec);
+	
 	/* Return 1 if result is negative. */
 	return x->tv_sec < y->tv_sec;
 }
@@ -194,7 +196,7 @@ void init_bzz(bzz_t **lock_ptr, int num_threads, int timeout)
         lock->timeout = timeout;
 	lock->mutexxx = vmalloc(sizeof(struct mutex));
         mutex_init(lock->mutexxx);
-
+	
         printk("init_bzz: %p %d %d\n", lock, num_threads, timeout);
 }
 
@@ -239,7 +241,6 @@ void bzz_lock(bzz_t *lock)
 	}
 
 	mutex_unlock(lock->mutexxx);
-
 	printk("bzz_lock: %p, color: %d\n", to_lock->task, to_lock->color);
 }
 
@@ -261,9 +262,8 @@ void bzz_kill(bzz_t *lock)
 {
 	bzz_thread *thd;
 	int i = 0;
-	
+
         printk("bzz_kill: %p\n", lock);
-	
 	// mainly for debugging (has yet to be encountered)
 	if (lock->gold_threads || lock->black_threads || lock->gold_end || lock->black_end || lock->current_locked)
 	{
@@ -289,6 +289,7 @@ asmlinkage long sys_bzz(int argid, void *arg)
 	bzz_color_args color_args;
 	bzz_t *lock_ptr;
 	printk(KERN_DEBUG "Running sys_bzz: argid %d\n", argid);
+	
 	switch (argid)
 	{
 		case SYSBZZ_INIT:

@@ -1,6 +1,5 @@
 #include "buzzlock.h"
 #include <linux/unistd.h>
-//#include <linux/linkage.h>
 
 #define __NR_bzz 286
 
@@ -12,10 +11,9 @@ void init_bzz(bzz_t *lock, int num_threads, useconds_t timeout)
 		int timeout;
 	} arg;
 	
-	//arg.lock = lock;
 	arg.num_threads = num_threads;
 	arg.timeout = (int) timeout;
-	printf("syscall: %d %d\n", num_threads, timeout);
+
 	if (syscall(__NR_bzz, SYSBZZ_INIT, (void *) &arg) < 0)
 		fprintf(stderr, "init_bzz error\n");
 	*lock = arg.lock; 

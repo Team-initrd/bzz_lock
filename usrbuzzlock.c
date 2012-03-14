@@ -82,7 +82,9 @@ int timeval_subtract (struct timeval *result, struct timeval *x, struct timeval 
 	 *           tv_usec is certainly positive. */
 	result->tv_sec = x->tv_sec - y->tv_sec;
 	result->tv_usec = x->tv_usec - y->tv_usec;
+	#ifdef DEBUG
 	printf("sub: %ld, %ld\n", result->tv_sec, result->tv_usec);
+	#endif
 	/* Return 1 if result is negative. */
 	return x->tv_sec < y->tv_sec;
 }
@@ -158,8 +160,9 @@ void init_bzz(bzz_t *lock, int num_threads, useconds_t timeout)
 	lock->current_locked = NULL;
 	lock->timeout = timeout;
 	pthread_mutex_init(&lock->mutex, NULL);
-	
+	#ifdef DEBUG
 	printf("init_bzz: %p %d %d\n", lock, num_threads, timeout);
+	#endif
 }
 
 void bzz_color(int color, bzz_t *lock)
@@ -170,11 +173,13 @@ void bzz_color(int color, bzz_t *lock)
 	add_thread(lock, new_thread, 0);
 	pthread_mutex_unlock(&lock->mutex);
 
+	#ifdef DEBUG
 	if (color == BZZ_BLACK) {
 		printf("bzz_color: BLACK %d\n", new_thread->tid);
 	} else if (color == BZZ_GOLD) {
 		printf("bzz_color: GOLD %d\n", new_thread->tid);
 	}
+	#endif
 }
 
 void bzz_lock(bzz_t *lock)
@@ -200,14 +205,17 @@ void bzz_lock(bzz_t *lock)
 	}
 	
 	pthread_mutex_unlock(&lock->mutex);
-
+	#ifdef DEBUG
 	printf("bzz_lock: %d, color: %d\n", to_lock->tid, to_lock->color);
+	#endif
 }
 
 void bzz_release(bzz_t *lock)
 {
 	// find next thread to unlock and signal its condition
+	#ifdef DEBUG
 	printf("bzz_release: %p tid: %d\n", lock, gettid());
+	#endif
 	pthread_mutex_lock(&lock->mutex);
 	if (lock->current_locked->tid != gettid()) {
 		printf("ERROR: You don't have the lock.\n");
@@ -222,9 +230,9 @@ void bzz_kill(bzz_t *lock)
 {
 	bzz_thread *thd;
 	int i = 0;	
-	
+	#ifdef DEBUG
 	printf("bzz_kill: %p\n", lock);
-	
+	#endif
 	if (lock->gold_threads || lock->black_threads || lock->gold_end || lock->black_end || lock->current_locked)
 	{
 		printf("WHAT ARE YOU DOING?????\n");
@@ -234,7 +242,9 @@ void bzz_kill(bzz_t *lock)
 	// free all unqueued
 	while ((thd = lock->unqueued_threads))
 	{
+		#ifdef DEBUG
 		printf("freeing: %d %d\n", thd->tid, i);
+		#endif
 		lock->unqueued_threads = lock->unqueued_threads->next;
 		pthread_cond_destroy(&thd->cond);
 		free(thd);

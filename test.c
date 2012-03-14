@@ -34,10 +34,8 @@ void thread(){
 	elapsedTime = (t2.tv_sec - t1.tv_sec);      // sec 
 	elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000000.0;   //  us
 
-	if(ID<=ng) printf("GOLD = %f, #%d\n",elapsedTime, omp_get_thread_num());
-	else printf("BLACK = %f, #%d\n",elapsedTime, omp_get_thread_num());
-
-
+	if(ID<=ng) printf("1,%f,%d\n",elapsedTime, omp_get_thread_num());
+	else printf("0,%f,%d\n",elapsedTime, omp_get_thread_num());
 }
 
 
@@ -64,14 +62,14 @@ int main(int argc, char *argv[]){
 		return 1;
 	}
 	
-	printf("thread count: %d\n", tc);
+	/*printf("thread count: %d\n", tc);
 	printf("number gold: %d\n", ng);
 	printf("thread timeout: %d\n", to);
-	printf("random max: %d\n", rt);
+	printf("random max: %d\n", rt);*/
 	
 	omp_set_num_threads(tc);
 	init_bzz(&GTLOCK,THREADPOOL,to);
-	printf("pointer: %p\n", GTLOCK);
+	//printf("pointer: %p\n", GTLOCK);
 
 	/*struct timespec time;
 clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time);
