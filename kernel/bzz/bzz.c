@@ -184,7 +184,6 @@ bzz_thread* alloc_bzz_thread(int color, struct task_struct *task)
 
 void init_bzz(bzz_t **lock_ptr, int num_threads, int timeout)
 {
-	//DEFINE_MUTEX(new_mutex);
 	bzz_t *lock = vmalloc(sizeof(bzz_t));
 	*lock_ptr = lock;
         lock->gold_threads = NULL;
@@ -195,7 +194,6 @@ void init_bzz(bzz_t **lock_ptr, int num_threads, int timeout)
         lock->timeout = timeout;
 	lock->mutexxx = vmalloc(sizeof(struct mutex));
         mutex_init(lock->mutexxx);
-	//lock->mutexxx = &new_mutex;
 
         printk("init_bzz: %p %d %d\n", lock, num_threads, timeout);
 }
@@ -260,7 +258,28 @@ void bzz_release(bzz_t *lock)
 
 void bzz_kill(bzz_t *lock)
 {
+	bzz_thread *thd;
+	int i = 0;
+	
         printk("bzz_kill: %p\n", lock);
+	
+	// mainly for debugging (has yet to be encountered)
+	if (lock->gold_threads || lock->black_threads || lock->gold_end || lock->black_end || lock->current_locked)
+	{
+		printk("Thread lists not empty, aborting\n");
+		return;
+	}
+	
+	// free all unqueued threads
+	while ((thd = lock->unqueued_threads))
+	{
+		printk("freeing: %p %d\n", thd->task, i++);
+		lock->unqueued_threads = lock->unqueued_threads->next;
+		vfree(thd);
+	}
+	
+	vfree(lock->mutexxx);
+	vfree(lock);
 }
 
 asmlinkage long sys_bzz(int argid, void *arg)
@@ -280,28 +299,22 @@ asmlinkage long sys_bzz(int argid, void *arg)
 		case SYSBZZ_COLOR:
 			copy_from_user(&color_args, arg, sizeof(bzz_color_args));
 			bzz_color(color_args.color, color_args.lock);
-			//copy_to_user(arg, &color_args, sizeof(bzz_color_args));
 			printk("SYSBZZ_COLOR\n");
 			break;
 		case SYSBZZ_LOCK:
 			copy_from_user(&lock_ptr, arg, sizeof(bzz_t*));
 			bzz_lock(lock_ptr);
-			//copy_to_user(arg, &lock_ptr, sizeof(bzz_t*));
-			//bzz_lock(arg);
 			printk("SYSBZZ_LOCK\n");
 			break;
 		case SYSBZZ_RELEASE:
 			copy_from_user(&lock_ptr, arg, sizeof(bzz_t*));
 			bzz_release(lock_ptr);
-			//copy_to_user(arg, &lock_ptr, sizeof(bzz_t*));
-			//bzz_release(arg);
 			printk("SYSBZZ_RELEASE\n");
 			break;
 		case SYSBZZ_KILL:
 			copy_from_user(&lock_ptr, arg, sizeof(bzz_t*));
 			bzz_kill(lock_ptr);
 			copy_to_user(arg, &lock_ptr, sizeof(bzz_t*));
-			//bzz_kill(arg);
 			printk("SYSBZZ_KILL\n");
 			break;
 		default:
