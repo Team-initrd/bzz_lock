@@ -8,11 +8,11 @@ kern : kernbuzzlock.c
 	gcc -shared -g -W1,-soname,libbuzzlock.so -o libbuzzlock.so kernbuzzlock.o
 
 usr : usrbuzzlock.c
-	gcc -Wall -fPIC -g -c usrbuzzlock.c
-	gcc -shared -g -W1,-soname,libbuzzlock.so -o libbuzzlock.so usrbuzzlock.o
+	gcc -Wall -fPIC -c usrbuzzlock.c
+	gcc -shared -W1,-soname,libbuzzlock.so -o libbuzzlock.so usrbuzzlock.o
 
 usrdebug : usrbuzzlock.c
-	gcc -Wall -fPIC -g -c usrbuzzlock.c
+	gcc -Wall -fPIC -g -DDEBUG -c usrbuzzlock.c
 	gcc -shared -g -W1,-soname,libbuzzlock.so -o libbuzzlock.so usrbuzzlock.o
 
 tester : tester.c kern
