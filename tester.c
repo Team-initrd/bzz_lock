@@ -2,9 +2,10 @@
 
 int main(int argc, char *argv[])
 {
-	bzz_t buzz;
+	bzz_t *lock;
 	
-	init_bzz(&buzz, 420, 666);
+	init_bzz(&lock, 420, 666);
+	printf("%p\n", lock);
 	
 	return 0;
 }

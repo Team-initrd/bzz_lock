@@ -13,7 +13,7 @@ usrbuzzlock : usrbuzzlock.c
 	gcc -Wall -fPIC -g -c usrbuzzlock.c
 	gcc -shared -g -W1,-soname,libbuzzlock.so -o libbuzzlock.so usrbuzzlock.o
 
-tester : tester.c usrbuzzlock
+tester : tester.c kernbuzzlock
 	gcc -Wall -L$(shell pwd) tester.c -lbuzzlock -o tester
 
 usrbuzzlock kernbuzzlock tester test test2 : buzzlock.h

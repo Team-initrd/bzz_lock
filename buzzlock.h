@@ -7,6 +7,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <sys/syscall.h>
+#include <string.h>
 
 #define BZZ_BLACK 0
 #define BZZ_GOLD 1
