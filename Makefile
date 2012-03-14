@@ -28,7 +28,7 @@ test2 : test.c kernbuzzlock
 	gcc -Wall -L$(shell pwd) -DBZZ_KERNEL_MODE test.c -g -fopenmp -lbuzzlock -o test
 
 runtest : test
-	LD_LIBRARY_PATH=$(shell pwd):$$LD_LIBRARY_PATH ./test
+	LD_LIBRARY_PATH=$(shell pwd):$$LD_LIBRARY_PATH ./test 100 30 10000
 
 runtest2 : test2
-	LD_LIBRARY_PATH=$(shell pwd):$$LD_LIBRARY_PATH ./test
+	LD_LIBRARY_PATH=$(shell pwd):$$LD_LIBRARY_PATH ./test 100 30 10000
