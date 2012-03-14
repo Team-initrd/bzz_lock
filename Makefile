@@ -6,7 +6,7 @@ clean :
 	-rm libbuzzlock.so usrbuzzlock.o kernbuzzlock.o tester test
 
 kernbuzzlock : kernbuzzlock.c
-	gcc -Wall -fPIC -g -c kernbuzzlock.c
+	gcc -Wall -fPIC -g -DBZZ_KERNEL_MODE -c kernbuzzlock.c
 	gcc -shared -g -W1,-soname,libbuzzlock.so -o libbuzzlock.so kernbuzzlock.o
 
 usrbuzzlock : usrbuzzlock.c
