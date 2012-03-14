@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include "buzzlock.h"
 
-#define THREADCOUNT 100
-#define GOLD 30
+#define THREADCOUNT 2
+#define GOLD 2
 #define BLACK THREADCOUNT-GOLD
 #define THREADPOOL 5   
 

@@ -232,6 +232,7 @@ void bzz_lock(bzz_t *lock)
 		lock->current_locked = to_lock;
 	} else {
 		queue_thread(lock, to_lock);
+		mutex_unlock(lock->mutexxx);
 		set_current_state(TASK_INTERRUPTIBLE);
 		schedule();
 		mutex_lock(lock->mutexxx);
