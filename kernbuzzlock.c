@@ -24,8 +24,8 @@ void init_bzz(bzz_t *lock, int num_threads, useconds_t timeout)
 void bzz_color(int color, bzz_t *lock)
 {
 	struct {
-		int color;
 		bzz_t lock;
+		int color;
 	} arg;
 	
 	arg.color = color;

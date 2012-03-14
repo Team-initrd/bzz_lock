@@ -21,7 +21,6 @@ void thread(){
 
 	if(ID<=GOLD) bzz_color(BZZ_GOLD, &GTLOCK); 
 	else  bzz_color(BZZ_BLACK, &GTLOCK);     // SET COLOR OF LOCK HERE Depending on condiion
-
 	gettimeofday(&t1,NULL);
 	bzz_lock(&GTLOCK);
 	usleep(ACTIVITY); // ACTIVITY
@@ -42,7 +41,9 @@ int main(){
 
 	omp_set_num_threads(THREADCOUNT);
 	init_bzz(&GTLOCK,THREADPOOL,TIMEOUT); 
-/*struct timespec time;
+printf("pointer: %p\n", GTLOCK);
+
+	/*struct timespec time;
 clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time);
 printf("Time: %ld, %ld\n", time.tv_sec, time.tv_nsec);
 clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time);
