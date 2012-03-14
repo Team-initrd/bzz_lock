@@ -147,6 +147,15 @@ int start_next_thread(bzz_t *lock)
 			lock->black_end = NULL;
 	}
 
+	// non-expired gold
+	if (next_thread == NULL && lock->gold_threads) {
+		next_thread = lock->gold_threads;
+		lock->gold_threads = next_thread->next;
+		if (lock->gold_end == next_thread)
+			lock->gold_end = NULL;
+	}
+
+
 	if (next_thread == NULL) {
 		lock->current_locked = NULL;
 		return 0;
